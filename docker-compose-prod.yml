@@ -1,0 +1,65 @@
+services:
+  # PERLU DIGANTI
+  wordpress_namaklien:
+    image: wordpress:6.9.4-php8.2-apache
+    restart: unless-stopped
+    depends_on:
+      db_namaklien:
+        condition: service_healthy
+    # ports:
+    #   - "${WP_PORT:-8080}:80"
+    environment:
+      WORDPRESS_DB_HOST: db_namaklien:3306
+      WORDPRESS_DB_USER: ${MYSQL_USER:-wp}
+      WORDPRESS_DB_PASSWORD: ${MYSQL_PASSWORD:-wp}
+      WORDPRESS_DB_NAME: ${MYSQL_DATABASE:-wordpress}
+      # Opsional: atur upload max size
+      PHP_UPLOAD_MAX_FILESIZE: 256M
+      PHP_POST_MAX_SIZE: 128M
+    volumes:
+      - ./wp-content:/var/www/html/wp-content
+    networks:
+      - edge
+    labels:
+      - "traefik.enable=true"
+      # ==== PERLU DIGANTI ====
+      - "traefik.http.routers.namaklien.rule=Host(`namaklien.com`)"
+      # ==== END PERLU DIGANTI ====
+      - "traefik.http.routers.namaklien.entrypoints=websecure"
+      - "traefik.http.routers.namaklien.tls.certresolver=le"
+      - "traefik.http.services.namaklien.loadbalancer.server.port=80"
+
+  # PERLU DIGANTI
+  db_namaklien:
+    image: mysql:8.0
+    command: --default-authentication-plugin=mysql_native_password
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-wordpress}
+      MYSQL_USER: ${MYSQL_USER:-wp}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-wp}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+    volumes:
+      - ./mysql_data:/var/lib/mysql
+    # ports:
+    #   - "${DB_PORT:-33060}:3306"
+    networks:
+      - edge
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "127.0.0.1",
+          "-uroot",
+          "-p${MYSQL_ROOT_PASSWORD}",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+networks:
+  edge:
+    external: true

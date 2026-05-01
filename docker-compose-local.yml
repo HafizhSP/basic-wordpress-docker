@@ -4,12 +4,12 @@ services:
     image: wordpress:6.9.4-php8.2-apache
     restart: unless-stopped
     depends_on:
-      db:
+      db_namaklien:
         condition: service_healthy
-    # ports:
-    #   - "${WP_PORT:-8080}:80"
+    ports:
+      - "${WP_PORT:-8080}:80"
     environment:
-      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_HOST: db_namaklien:3306
       WORDPRESS_DB_USER: ${MYSQL_USER:-wp}
       WORDPRESS_DB_PASSWORD: ${MYSQL_PASSWORD:-wp}
       WORDPRESS_DB_NAME: ${MYSQL_DATABASE:-wordpress}
@@ -20,14 +20,14 @@ services:
       - ./wp-content:/var/www/html/wp-content
     networks:
       - edge
-    labels:
-      - "traefik.enable=true"
-      # ==== PERLU DIGANTI ====
-      - "traefik.http.routers.namaklien.rule=Host(`namaklien.com`)"
-      # ==== END PERLU DIGANTI ====
-      - "traefik.http.routers.namaklien.entrypoints=websecure"
-      - "traefik.http.routers.namaklien.tls.certresolver=le"
-      - "traefik.http.services.namaklien.loadbalancer.server.port=80"
+    # labels:
+    #   - "traefik.enable=true"
+    #   # ==== PERLU DIGANTI ====
+    #   - "traefik.http.routers.namaklien.rule=Host(`namaklien.com`)"
+    #   # ==== END PERLU DIGANTI ====
+    #   - "traefik.http.routers.namaklien.entrypoints=websecure"
+    #   - "traefik.http.routers.namaklien.tls.certresolver=le"
+    #   - "traefik.http.services.namaklien.loadbalancer.server.port=80"
 
   # PERLU DIGANTI
   db_namaklien:
@@ -43,6 +43,8 @@ services:
       - ./mysql_data:/var/lib/mysql
     # ports:
     #   - "${DB_PORT:-33060}:3306"
+    networks:
+      - edge
     healthcheck:
       test:
         [
@@ -60,4 +62,5 @@ services:
 
 networks:
   edge:
-    external: true
+    external: false
+    driver: bridge
